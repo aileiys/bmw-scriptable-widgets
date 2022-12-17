@@ -879,8 +879,8 @@ let WIDGET_FONT = 'SF UI Display';
 let WIDGET_FONT_BOLD = 'SF UI Display Bold';
 let BMW_SERVER_HOST = 'https://myprofile.bmw.com.cn';
 let APP_HOST_SERVER = 'https://bmw-linker.com';
-let JS_CDN_SERVER = 'https://cdn.jsdelivr.net/gh/opp100/bmw-scriptable-widgets@main/Publish/';
-let JS_LIB_CDN_SERVER = 'https://cdn.jsdelivr.net/gh/opp100/bmw-scriptable-widgets/lib';
+let JS_CDN_SERVER = 'https://github.com/aileiys/bmw-scriptable-widgets@main/Publish/';
+let JS_LIB_CDN_SERVER = 'https://github.com/aileiys/bmw-scriptable-widgets/lib';
 
 let DEFAULT_BG_COLOR_LIGHT = '#FFFFFF';
 let DEFAULT_BG_COLOR_DARK = '#2B2B2B';
