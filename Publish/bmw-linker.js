@@ -890,7 +890,7 @@ let DEFAULT_LOGO_DARK = 'https://z3.ax1x.com/2021/11/01/ICaqu6.png';
 // header is might be used for preventing the bmw block the external api?
 let BMW_HEADERS = {
     'Content-Type': 'application/json; charset=utf-8',
-    'x-user-agent': 'ios(15.4.1);bmw;2.3.0(13603)'
+    'x-user-agent': 'ios(16.2);bmw;2.12.0(19965)'
 };
 
 // setup local storage keys
