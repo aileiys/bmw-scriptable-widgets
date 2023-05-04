@@ -1730,7 +1730,7 @@ class Widget extends Base {
         //console.log('trying to check captcha');
         let res = await req.loadJSON();
         console.warn(res);
-        let code = res.data.value;
+        let code = res.data['value'];
 
         if (res.code !== 200) {
             return this.loginFailedAlert();
