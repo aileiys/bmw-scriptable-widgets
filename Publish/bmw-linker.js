@@ -4,343 +4,213 @@
 // Variables used by Scriptable.
 // These must be at the very top of the file. Do not edit.
 // icon-color: deep-gray; icon-glyph: code-branch;
-//
+// 
 // 「小件件」
 // 开发环境，用于小组件调用
 // https://x.im3x.cn
 // https://github.com/im3x/Scriptables
-//
+// 
 
 // 组件基础类
-const RUNTIME_VERSION = 20201209;
+const RUNTIME_VERSION = 20201209
 
 class Base {
-    constructor(arg = '') {
-        this.arg = arg;
-        this._actions = {};
-        this.init();
+  constructor (arg="") {
+    this.arg = arg
+    this._actions = {}
+    this.init()
+  }
+
+  init (widgetFamily = config.widgetFamily) {
+    // 组件大小：small,medium,large
+    this.widgetFamily = widgetFamily
+    // 系统设置的key，这里分为三个类型：
+    // 1. 全局
+    // 2. 不同尺寸的小组件
+    // 3. 不同尺寸+小组件自定义的参数
+    // 当没有key2时，获取key1，没有key1获取全局key的设置
+    // this.SETTING_KEY = this.md5(Script.name()+'@'+this.widgetFamily+"@"+this.arg)
+    // this.SETTING_KEY1 = this.md5(Script.name()+'@'+this.widgetFamily)
+    this.SETTING_KEY = this.md5(Script.name())
+    // 文件管理器
+    // 提示：缓存数据不要用这个操作，这个是操作源码目录的，缓存建议存放在local temp目录中
+    this.FILE_MGR = FileManager[module.filename.includes('Documents/iCloud~') ? 'iCloud' : 'local']()
+    // 本地，用于存储图片等
+    this.FILE_MGR_LOCAL = FileManager.local()
+    this.BACKGROUND_KEY = this.FILE_MGR_LOCAL.joinPath(this.FILE_MGR_LOCAL.documentsDirectory(), `bg_${this.SETTING_KEY}.jpg`)
+    // this.BACKGROUND_KEY1 = this.FILE_MGR_LOCAL.joinPath(this.FILE_MGR_LOCAL.documentsDirectory(), `bg_${this.SETTING_KEY1}.jpg`)
+    // this.BACKGROUND_KEY2 = this.FILE_MGR_LOCAL.joinPath(this.FILE_MGR_LOCAL.documentsDirectory(), `bg_${this.SETTING_KEY2}.jpg`)
+    // // 插件设置
+    this.settings = this.getSettings()
+  }
+
+  /**
+   * 注册点击操作菜单
+   * @param {string} name 操作函数名
+   * @param {func} func 点击后执行的函数
+   */
+  registerAction (name, func) {
+    this._actions[name] = func.bind(this)
+  }
+
+  /**
+   * 生成操作回调URL，点击后执行本脚本，并触发相应操作
+   * @param {string} name 操作的名称
+   * @param {string} data 传递的数据
+   */
+  actionUrl (name = '', data = '') {
+    let u = URLScheme.forRunningScript()
+    let q = `act=${encodeURIComponent(name)}&data=${encodeURIComponent(data)}&__arg=${encodeURIComponent(this.arg)}&__size=${this.widgetFamily}`
+    let result = ''
+    if (u.includes('run?')) {
+      result = `${u}&${q}`
+    } else {
+      result = `${u}?${q}`
+    }
+    return result
+  }
+
+  /**
+   * base64 编码字符串
+   * @param {string} str 要编码的字符串
+   */
+  base64Encode (str) {
+    const data = Data.fromString(str)
+    return data.toBase64String()
+  }
+
+  /**
+   * base64解码数据 返回字符串
+   * @param {string} b64 base64编码的数据
+   */
+  base64Decode (b64) {
+    const data = Data.fromBase64String(b64)
+    return data.toRawString()
+  }
+
+  /**
+   * md5 加密字符串
+   * @param {string} str 要加密成md5的数据
+   */
+  md5 (str) {
+    function d(n,t){var r=(65535&n)+(65535&t);return(n>>16)+(t>>16)+(r>>16)<<16|65535&r}function f(n,t,r,e,o,u){return d((c=d(d(t,n),d(e,u)))<<(f=o)|c>>>32-f,r);var c,f}function l(n,t,r,e,o,u,c){return f(t&r|~t&e,n,t,o,u,c)}function v(n,t,r,e,o,u,c){return f(t&e|r&~e,n,t,o,u,c)}function g(n,t,r,e,o,u,c){return f(t^r^e,n,t,o,u,c)}function m(n,t,r,e,o,u,c){return f(r^(t|~e),n,t,o,u,c)}function i(n,t){var r,e,o,u;n[t>>5]|=128<<t%32,n[14+(t+64>>>9<<4)]=t;for(var c=1732584193,f=-271733879,i=-1732584194,a=271733878,h=0;h<n.length;h+=16)c=l(r=c,e=f,o=i,u=a,n[h],7,-680876936),a=l(a,c,f,i,n[h+1],12,-389564586),i=l(i,a,c,f,n[h+2],17,606105819),f=l(f,i,a,c,n[h+3],22,-1044525330),c=l(c,f,i,a,n[h+4],7,-176418897),a=l(a,c,f,i,n[h+5],12,1200080426),i=l(i,a,c,f,n[h+6],17,-1473231341),f=l(f,i,a,c,n[h+7],22,-45705983),c=l(c,f,i,a,n[h+8],7,1770035416),a=l(a,c,f,i,n[h+9],12,-1958414417),i=l(i,a,c,f,n[h+10],17,-42063),f=l(f,i,a,c,n[h+11],22,-1990404162),c=l(c,f,i,a,n[h+12],7,1804603682),a=l(a,c,f,i,n[h+13],12,-40341101),i=l(i,a,c,f,n[h+14],17,-1502002290),c=v(c,f=l(f,i,a,c,n[h+15],22,1236535329),i,a,n[h+1],5,-165796510),a=v(a,c,f,i,n[h+6],9,-1069501632),i=v(i,a,c,f,n[h+11],14,643717713),f=v(f,i,a,c,n[h],20,-373897302),c=v(c,f,i,a,n[h+5],5,-701558691),a=v(a,c,f,i,n[h+10],9,38016083),i=v(i,a,c,f,n[h+15],14,-660478335),f=v(f,i,a,c,n[h+4],20,-405537848),c=v(c,f,i,a,n[h+9],5,568446438),a=v(a,c,f,i,n[h+14],9,-1019803690),i=v(i,a,c,f,n[h+3],14,-187363961),f=v(f,i,a,c,n[h+8],20,1163531501),c=v(c,f,i,a,n[h+13],5,-1444681467),a=v(a,c,f,i,n[h+2],9,-51403784),i=v(i,a,c,f,n[h+7],14,1735328473),c=g(c,f=v(f,i,a,c,n[h+12],20,-1926607734),i,a,n[h+5],4,-378558),a=g(a,c,f,i,n[h+8],11,-2022574463),i=g(i,a,c,f,n[h+11],16,1839030562),f=g(f,i,a,c,n[h+14],23,-35309556),c=g(c,f,i,a,n[h+1],4,-1530992060),a=g(a,c,f,i,n[h+4],11,1272893353),i=g(i,a,c,f,n[h+7],16,-155497632),f=g(f,i,a,c,n[h+10],23,-1094730640),c=g(c,f,i,a,n[h+13],4,681279174),a=g(a,c,f,i,n[h],11,-358537222),i=g(i,a,c,f,n[h+3],16,-722521979),f=g(f,i,a,c,n[h+6],23,76029189),c=g(c,f,i,a,n[h+9],4,-640364487),a=g(a,c,f,i,n[h+12],11,-421815835),i=g(i,a,c,f,n[h+15],16,530742520),c=m(c,f=g(f,i,a,c,n[h+2],23,-995338651),i,a,n[h],6,-198630844),a=m(a,c,f,i,n[h+7],10,1126891415),i=m(i,a,c,f,n[h+14],15,-1416354905),f=m(f,i,a,c,n[h+5],21,-57434055),c=m(c,f,i,a,n[h+12],6,1700485571),a=m(a,c,f,i,n[h+3],10,-1894986606),i=m(i,a,c,f,n[h+10],15,-1051523),f=m(f,i,a,c,n[h+1],21,-2054922799),c=m(c,f,i,a,n[h+8],6,1873313359),a=m(a,c,f,i,n[h+15],10,-30611744),i=m(i,a,c,f,n[h+6],15,-1560198380),f=m(f,i,a,c,n[h+13],21,1309151649),c=m(c,f,i,a,n[h+4],6,-145523070),a=m(a,c,f,i,n[h+11],10,-1120210379),i=m(i,a,c,f,n[h+2],15,718787259),f=m(f,i,a,c,n[h+9],21,-343485551),c=d(c,r),f=d(f,e),i=d(i,o),a=d(a,u);return[c,f,i,a]}function a(n){for(var t="",r=32*n.length,e=0;e<r;e+=8)t+=String.fromCharCode(n[e>>5]>>>e%32&255);return t}function h(n){var t=[];for(t[(n.length>>2)-1]=void 0,e=0;e<t.length;e+=1)t[e]=0;for(var r=8*n.length,e=0;e<r;e+=8)t[e>>5]|=(255&n.charCodeAt(e/8))<<e%32;return t}function e(n){for(var t,r="0123456789abcdef",e="",o=0;o<n.length;o+=1)t=n.charCodeAt(o),e+=r.charAt(t>>>4&15)+r.charAt(15&t);return e}function r(n){return unescape(encodeURIComponent(n))}function o(n){return a(i(h(t=r(n)),8*t.length));var t}function u(n,t){return function(n,t){var r,e,o=h(n),u=[],c=[];for(u[15]=c[15]=void 0,16<o.length&&(o=i(o,8*n.length)),r=0;r<16;r+=1)u[r]=909522486^o[r],c[r]=1549556828^o[r];return e=i(u.concat(h(t)),512+8*t.length),a(i(c.concat(e),640))}(r(n),r(t))}function t(n,t,r){return t?r?u(t,n):e(u(t,n)):r?o(n):e(o(n))}
+    return t(str)
+  }
+
+
+  /**
+   * HTTP 请求接口
+   * @param {string} url 请求的url
+   * @param {bool} json 返回数据是否为 json，默认 true
+   * @param {bool} useCache 是否采用离线缓存（请求失败后获取上一次结果），
+   * @return {string | json | null}
+   */
+  async httpGet (url, json = true, useCache = false) {
+    let data = null
+    const cacheKey = this.md5(url)
+    if (useCache && Keychain.contains(cacheKey)) {
+      let cache = Keychain.get(cacheKey)
+      return json ? JSON.parse(cache) : cache
+    }
+    try {
+      let req = new Request(url)
+      data = await (json ? req.loadJSON() : req.loadString())
+    } catch (e) {}
+    // 判断数据是否为空（加载失败）
+    if (!data && Keychain.contains(cacheKey)) {
+      // 判断是否有缓存
+      let cache = Keychain.get(cacheKey)
+      return json ? JSON.parse(cache) : cache
+    }
+    // 存储缓存
+    Keychain.set(cacheKey, json ? JSON.stringify(data) : data)
+    return data
+  }
+
+  async httpPost (url, data) {}
+
+  /**
+   * 获取远程图片内容
+   * @param {string} url 图片地址
+   * @param {bool} useCache 是否使用缓存（请求失败时获取本地缓存）
+   */
+  async getImageByUrl (url, useCache = true) {
+    const cacheKey = this.md5(url)
+    const cacheFile = FileManager.local().joinPath(FileManager.local().temporaryDirectory(), cacheKey)
+    // 判断是否有缓存
+    if (useCache && FileManager.local().fileExists(cacheFile)) {
+      return Image.fromFile(cacheFile)
+    }
+    try {
+      const req = new Request(url)
+      const img = await req.loadImage()
+      // 存储到缓存
+      FileManager.local().writeImage(cacheFile, img)
+      return img
+    } catch (e) {
+      // 没有缓存+失败情况下，返回自定义的绘制图片（红色背景）
+        throw new Error('加载图片失败');
+    }
+  }
+
+  /**
+   * 渲染标题内容
+   * @param {object} widget 组件对象
+   * @param {string} icon 图标地址
+   * @param {string} title 标题内容
+   * @param {bool|color} color 字体的颜色（自定义背景时使用，默认系统）
+   */
+  async renderHeader (widget, icon, title, color = false) {
+    widget.addSpacer(10)
+    let header = widget.addStack()
+    header.centerAlignContent()
+    let _icon = header.addImage(await this.getImageByUrl(icon))
+    _icon.imageSize = new Size(14, 14)
+    _icon.cornerRadius = 4
+    header.addSpacer(10)
+    let _title = header.addText(title)
+    if (color) _title.textColor = color
+    _title.textOpacity = 0.7
+    _title.font = Font.boldSystemFont(12)
+    widget.addSpacer(10)
+    return widget
+  }
+
+  /**
+   * 获取截图中的组件剪裁图
+   * 可用作透明背景
+   * 返回图片image对象
+   * 代码改自：https://gist.github.com/mzeryck/3a97ccd1e059b3afa3c6666d27a496c9
+   * @param {string} title 开始处理前提示用户截图的信息，可选（适合用在组件自定义透明背景时提示）
+   */
+  async getWidgetScreenShot (title = null) {
+    // Generate an alert with the provided array of options.
+    async function generateAlert(message,options) {
+      
+      let alert = new Alert()
+      alert.message = message
+      
+      for (const option of options) {
+        alert.addAction(option)
+      }
+      
+      let response = await alert.presentAlert()
+      return response
     }
 
-    init(widgetFamily = config.widgetFamily) {
-        // 组件大小：small,medium,large
-        this.widgetFamily = widgetFamily;
-        // 系统设置的key，这里分为三个类型：
-        // 1. 全局
-        // 2. 不同尺寸的小组件
-        // 3. 不同尺寸+小组件自定义的参数
-        // 当没有key2时，获取key1，没有key1获取全局key的设置
-        // this.SETTING_KEY = this.md5(Script.name()+'@'+this.widgetFamily+"@"+this.arg)
-        // this.SETTING_KEY1 = this.md5(Script.name()+'@'+this.widgetFamily)
-        this.SETTING_KEY = this.md5(Script.name());
-        // 文件管理器
-        // 提示：缓存数据不要用这个操作，这个是操作源码目录的，缓存建议存放在local temp目录中
-        this.FILE_MGR = FileManager[module.filename.includes('Documents/iCloud~') ? 'iCloud' : 'local']();
-        // 本地，用于存储图片等
-        this.FILE_MGR_LOCAL = FileManager.local();
-        this.BACKGROUND_KEY = this.FILE_MGR_LOCAL.joinPath(
-            this.FILE_MGR_LOCAL.documentsDirectory(),
-            `bg_${this.SETTING_KEY}.jpg`
-        );
-        // this.BACKGROUND_KEY1 = this.FILE_MGR_LOCAL.joinPath(this.FILE_MGR_LOCAL.documentsDirectory(), `bg_${this.SETTING_KEY1}.jpg`)
-        // this.BACKGROUND_KEY2 = this.FILE_MGR_LOCAL.joinPath(this.FILE_MGR_LOCAL.documentsDirectory(), `bg_${this.SETTING_KEY2}.jpg`)
-        // // 插件设置
-        this.settings = this.getSettings();
+    // Crop an image into the specified rect.
+    function cropImage(img,rect) {
+      
+      let draw = new DrawContext()
+      draw.size = new Size(rect.width, rect.height)
+      
+      draw.drawImageAtPoint(img,new Point(-rect.x, -rect.y))  
+      return draw.getImage()
     }
 
-    /**
-     * 注册点击操作菜单
-     * @param {string} name 操作函数名
-     * @param {func} func 点击后执行的函数
-     */
-    registerAction(name, func) {
-        this._actions[name] = func.bind(this);
-    }
-
-    /**
-     * 生成操作回调URL，点击后执行本脚本，并触发相应操作
-     * @param {string} name 操作的名称
-     * @param {string} data 传递的数据
-     */
-    actionUrl(name = '', data = '') {
-        let u = URLScheme.forRunningScript();
-        let q = `act=${encodeURIComponent(name)}&data=${encodeURIComponent(data)}&__arg=${encodeURIComponent(
-            this.arg
-        )}&__size=${this.widgetFamily}`;
-        let result = '';
-        if (u.includes('run?')) {
-            result = `${u}&${q}`;
-        } else {
-            result = `${u}?${q}`;
-        }
-        return result;
-    }
-
-    /**
-     * base64 编码字符串
-     * @param {string} str 要编码的字符串
-     */
-    base64Encode(str) {
-        const data = Data.fromString(str);
-        return data.toBase64String();
-    }
-
-    /**
-     * base64解码数据 返回字符串
-     * @param {string} b64 base64编码的数据
-     */
-    base64Decode(b64) {
-        const data = Data.fromBase64String(b64);
-        return data.toRawString();
-    }
-
-    /**
-     * md5 加密字符串
-     * @param {string} str 要加密成md5的数据
-     */
-    md5(str) {
-        function d(n, t) {
-            var r = (65535 & n) + (65535 & t);
-            return (((n >> 16) + (t >> 16) + (r >> 16)) << 16) | (65535 & r);
-        }
-        function f(n, t, r, e, o, u) {
-            return d(((c = d(d(t, n), d(e, u))) << (f = o)) | (c >>> (32 - f)), r);
-            var c, f;
-        }
-        function l(n, t, r, e, o, u, c) {
-            return f((t & r) | (~t & e), n, t, o, u, c);
-        }
-        function v(n, t, r, e, o, u, c) {
-            return f((t & e) | (r & ~e), n, t, o, u, c);
-        }
-        function g(n, t, r, e, o, u, c) {
-            return f(t ^ r ^ e, n, t, o, u, c);
-        }
-        function m(n, t, r, e, o, u, c) {
-            return f(r ^ (t | ~e), n, t, o, u, c);
-        }
-        function i(n, t) {
-            var r, e, o, u;
-            (n[t >> 5] |= 128 << t % 32), (n[14 + (((t + 64) >>> 9) << 4)] = t);
-            for (var c = 1732584193, f = -271733879, i = -1732584194, a = 271733878, h = 0; h < n.length; h += 16)
-                (c = l((r = c), (e = f), (o = i), (u = a), n[h], 7, -680876936)),
-                    (a = l(a, c, f, i, n[h + 1], 12, -389564586)),
-                    (i = l(i, a, c, f, n[h + 2], 17, 606105819)),
-                    (f = l(f, i, a, c, n[h + 3], 22, -1044525330)),
-                    (c = l(c, f, i, a, n[h + 4], 7, -176418897)),
-                    (a = l(a, c, f, i, n[h + 5], 12, 1200080426)),
-                    (i = l(i, a, c, f, n[h + 6], 17, -1473231341)),
-                    (f = l(f, i, a, c, n[h + 7], 22, -45705983)),
-                    (c = l(c, f, i, a, n[h + 8], 7, 1770035416)),
-                    (a = l(a, c, f, i, n[h + 9], 12, -1958414417)),
-                    (i = l(i, a, c, f, n[h + 10], 17, -42063)),
-                    (f = l(f, i, a, c, n[h + 11], 22, -1990404162)),
-                    (c = l(c, f, i, a, n[h + 12], 7, 1804603682)),
-                    (a = l(a, c, f, i, n[h + 13], 12, -40341101)),
-                    (i = l(i, a, c, f, n[h + 14], 17, -1502002290)),
-                    (c = v(c, (f = l(f, i, a, c, n[h + 15], 22, 1236535329)), i, a, n[h + 1], 5, -165796510)),
-                    (a = v(a, c, f, i, n[h + 6], 9, -1069501632)),
-                    (i = v(i, a, c, f, n[h + 11], 14, 643717713)),
-                    (f = v(f, i, a, c, n[h], 20, -373897302)),
-                    (c = v(c, f, i, a, n[h + 5], 5, -701558691)),
-                    (a = v(a, c, f, i, n[h + 10], 9, 38016083)),
-                    (i = v(i, a, c, f, n[h + 15], 14, -660478335)),
-                    (f = v(f, i, a, c, n[h + 4], 20, -405537848)),
-                    (c = v(c, f, i, a, n[h + 9], 5, 568446438)),
-                    (a = v(a, c, f, i, n[h + 14], 9, -1019803690)),
-                    (i = v(i, a, c, f, n[h + 3], 14, -187363961)),
-                    (f = v(f, i, a, c, n[h + 8], 20, 1163531501)),
-                    (c = v(c, f, i, a, n[h + 13], 5, -1444681467)),
-                    (a = v(a, c, f, i, n[h + 2], 9, -51403784)),
-                    (i = v(i, a, c, f, n[h + 7], 14, 1735328473)),
-                    (c = g(c, (f = v(f, i, a, c, n[h + 12], 20, -1926607734)), i, a, n[h + 5], 4, -378558)),
-                    (a = g(a, c, f, i, n[h + 8], 11, -2022574463)),
-                    (i = g(i, a, c, f, n[h + 11], 16, 1839030562)),
-                    (f = g(f, i, a, c, n[h + 14], 23, -35309556)),
-                    (c = g(c, f, i, a, n[h + 1], 4, -1530992060)),
-                    (a = g(a, c, f, i, n[h + 4], 11, 1272893353)),
-                    (i = g(i, a, c, f, n[h + 7], 16, -155497632)),
-                    (f = g(f, i, a, c, n[h + 10], 23, -1094730640)),
-                    (c = g(c, f, i, a, n[h + 13], 4, 681279174)),
-                    (a = g(a, c, f, i, n[h], 11, -358537222)),
-                    (i = g(i, a, c, f, n[h + 3], 16, -722521979)),
-                    (f = g(f, i, a, c, n[h + 6], 23, 76029189)),
-                    (c = g(c, f, i, a, n[h + 9], 4, -640364487)),
-                    (a = g(a, c, f, i, n[h + 12], 11, -421815835)),
-                    (i = g(i, a, c, f, n[h + 15], 16, 530742520)),
-                    (c = m(c, (f = g(f, i, a, c, n[h + 2], 23, -995338651)), i, a, n[h], 6, -198630844)),
-                    (a = m(a, c, f, i, n[h + 7], 10, 1126891415)),
-                    (i = m(i, a, c, f, n[h + 14], 15, -1416354905)),
-                    (f = m(f, i, a, c, n[h + 5], 21, -57434055)),
-                    (c = m(c, f, i, a, n[h + 12], 6, 1700485571)),
-                    (a = m(a, c, f, i, n[h + 3], 10, -1894986606)),
-                    (i = m(i, a, c, f, n[h + 10], 15, -1051523)),
-                    (f = m(f, i, a, c, n[h + 1], 21, -2054922799)),
-                    (c = m(c, f, i, a, n[h + 8], 6, 1873313359)),
-                    (a = m(a, c, f, i, n[h + 15], 10, -30611744)),
-                    (i = m(i, a, c, f, n[h + 6], 15, -1560198380)),
-                    (f = m(f, i, a, c, n[h + 13], 21, 1309151649)),
-                    (c = m(c, f, i, a, n[h + 4], 6, -145523070)),
-                    (a = m(a, c, f, i, n[h + 11], 10, -1120210379)),
-                    (i = m(i, a, c, f, n[h + 2], 15, 718787259)),
-                    (f = m(f, i, a, c, n[h + 9], 21, -343485551)),
-                    (c = d(c, r)),
-                    (f = d(f, e)),
-                    (i = d(i, o)),
-                    (a = d(a, u));
-            return [c, f, i, a];
-        }
-        function a(n) {
-            for (var t = '', r = 32 * n.length, e = 0; e < r; e += 8)
-                t += String.fromCharCode((n[e >> 5] >>> e % 32) & 255);
-            return t;
-        }
-        function h(n) {
-            var t = [];
-            for (t[(n.length >> 2) - 1] = void 0, e = 0; e < t.length; e += 1) t[e] = 0;
-            for (var r = 8 * n.length, e = 0; e < r; e += 8) t[e >> 5] |= (255 & n.charCodeAt(e / 8)) << e % 32;
-            return t;
-        }
-        function e(n) {
-            for (var t, r = '0123456789abcdef', e = '', o = 0; o < n.length; o += 1)
-                (t = n.charCodeAt(o)), (e += r.charAt((t >>> 4) & 15) + r.charAt(15 & t));
-            return e;
-        }
-        function r(n) {
-            return unescape(encodeURIComponent(n));
-        }
-        function o(n) {
-            return a(i(h((t = r(n))), 8 * t.length));
-            var t;
-        }
-        function u(n, t) {
-            return (function (n, t) {
-                var r,
-                    e,
-                    o = h(n),
-                    u = [],
-                    c = [];
-                for (u[15] = c[15] = void 0, 16 < o.length && (o = i(o, 8 * n.length)), r = 0; r < 16; r += 1)
-                    (u[r] = 909522486 ^ o[r]), (c[r] = 1549556828 ^ o[r]);
-                return (e = i(u.concat(h(t)), 512 + 8 * t.length)), a(i(c.concat(e), 640));
-            })(r(n), r(t));
-        }
-        function t(n, t, r) {
-            return t ? (r ? u(t, n) : e(u(t, n))) : r ? o(n) : e(o(n));
-        }
-        return t(str);
-    }
-
-    /**
-     * HTTP 请求接口
-     * @param {string} url 请求的url
-     * @param {bool} json 返回数据是否为 json，默认 true
-     * @param {bool} useCache 是否采用离线缓存（请求失败后获取上一次结果），
-     * @return {string | json | null}
-     */
-    async httpGet(url, json = true, useCache = false) {
-        let data = null;
-        const cacheKey = this.md5(url);
-        if (useCache && Keychain.contains(cacheKey)) {
-            let cache = Keychain.get(cacheKey);
-            return json ? JSON.parse(cache) : cache;
-        }
-        try {
-            let req = new Request(url);
-            data = await (json ? req.loadJSON() : req.loadString());
-        } catch (e) {}
-        // 判断数据是否为空（加载失败）
-        if (!data && Keychain.contains(cacheKey)) {
-            // 判断是否有缓存
-            let cache = Keychain.get(cacheKey);
-            return json ? JSON.parse(cache) : cache;
-        }
-        // 存储缓存
-        Keychain.set(cacheKey, json ? JSON.stringify(data) : data);
-        return data;
-    }
-
-    async httpPost(url, data) {}
-
-    /**
-     * 获取远程图片内容
-     * @param {string} url 图片地址
-     * @param {bool} useCache 是否使用缓存（请求失败时获取本地缓存）
-     */
-    async getImageByUrl(url, useCache = true) {
-        const cacheKey = this.md5(url);
-        const cacheFile = FileManager.local().joinPath(FileManager.local().temporaryDirectory(), cacheKey);
-        // 判断是否有缓存
-        if (useCache && FileManager.local().fileExists(cacheFile)) {
-            return Image.fromFile(cacheFile);
-        }
-        try {
-            const req = new Request(url);
-            const img = await req.loadImage();
-            // 存储到缓存
-            FileManager.local().writeImage(cacheFile, img);
-            return img;
-        } catch (e) {
-            // 没有缓存+失败情况下，返回自定义的绘制图片（红色背景）
-            throw new Error('加载图片失败');
-        }
-    }
-
-    /**
-     * 渲染标题内容
-     * @param {object} widget 组件对象
-     * @param {string} icon 图标地址
-     * @param {string} title 标题内容
-     * @param {bool|color} color 字体的颜色（自定义背景时使用，默认系统）
-     */
-    async renderHeader(widget, icon, title, color = false) {
-        widget.addSpacer(10);
-        let header = widget.addStack();
-        header.centerAlignContent();
-        let _icon = header.addImage(await this.getImageByUrl(icon));
-        _icon.imageSize = new Size(14, 14);
-        _icon.cornerRadius = 4;
-        header.addSpacer(10);
-        let _title = header.addText(title);
-        if (color) _title.textColor = color;
-        _title.textOpacity = 0.7;
-        _title.font = Font.boldSystemFont(12);
-        widget.addSpacer(10);
-        return widget;
-    }
-
-    /**
-     * 获取截图中的组件剪裁图
-     * 可用作透明背景
-     * 返回图片image对象
-     * 代码改自：https://gist.github.com/mzeryck/3a97ccd1e059b3afa3c6666d27a496c9
-     * @param {string} title 开始处理前提示用户截图的信息，可选（适合用在组件自定义透明背景时提示）
-     */
-    async getWidgetScreenShot(title = null) {
-        // Generate an alert with the provided array of options.
-        async function generateAlert(message, options) {
-            let alert = new Alert();
-            alert.message = message;
-
-            for (const option of options) {
-                alert.addAction(option);
-            }
-
-            let response = await alert.presentAlert();
-            return response;
-        }
-
-        // Crop an image into the specified rect.
-        function cropImage(img, rect) {
-            let draw = new DrawContext();
-            draw.size = new Size(rect.width, rect.height);
-
-            draw.drawImageAtPoint(img, new Point(-rect.x, -rect.y));
-            return draw.getImage();
-        }
-
-        async function blurImage(img, style) {
-            const blur = 150;
-            const js = `
+    async function blurImage(img,style) {
+      const blur = 150
+      const js = `
 var mul_table=[512,512,456,512,328,456,335,512,405,328,271,456,388,335,292,512,454,405,364,328,298,271,496,456,420,388,360,335,312,292,273,512,482,454,428,405,383,364,345,328,312,298,284,271,259,496,475,456,437,420,404,388,374,360,347,335,323,312,302,292,282,273,265,512,497,482,468,454,441,428,417,405,394,383,373,364,354,345,337,328,320,312,305,298,291,284,278,271,265,259,507,496,485,475,465,456,446,437,428,420,412,404,396,388,381,374,367,360,354,347,341,335,329,323,318,312,307,302,297,292,287,282,278,273,269,265,261,512,505,497,489,482,475,468,461,454,447,441,435,428,422,417,411,405,399,394,389,383,378,373,368,364,359,354,350,345,341,337,332,328,324,320,316,312,309,305,301,298,294,291,287,284,281,278,274,271,268,265,262,259,257,507,501,496,491,485,480,475,470,465,460,456,451,446,442,437,433,428,424,420,416,412,408,404,400,396,392,388,385,381,377,374,370,367,363,360,357,354,350,347,344,341,338,335,332,329,326,323,320,318,315,312,310,307,304,302,299,297,294,292,289,287,285,282,280,278,275,273,271,269,267,265,263,261,259];var shg_table=[9,11,12,13,13,14,14,15,15,15,15,16,16,16,16,17,17,17,17,17,17,17,18,18,18,18,18,18,18,18,18,19,19,19,19,19,19,19,19,19,19,19,19,19,19,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,20,21,21,21,21,21,21,21,21,21,21,21,21,21,21,21,21,21,21,21,21,21,21,21,21,21,21,21,22,22,22,22,22,22,22,22,22,22,22,22,22,22,22,22,22,22,22,22,22,22,22,22,22,22,22,22,22,22,22,22,22,22,22,22,22,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,23,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24,24];function stackBlurCanvasRGB(id,top_x,top_y,width,height,radius){if(isNaN(radius)||radius<1)return;radius|=0;var canvas=document.getElementById(id);var context=canvas.getContext("2d");var imageData;try{try{imageData=context.getImageData(top_x,top_y,width,height)}catch(e){try{netscape.security.PrivilegeManager.enablePrivilege("UniversalBrowserRead");imageData=context.getImageData(top_x,top_y,width,height)}catch(e){alert("Cannot access local image");throw new Error("unable to access local image data: "+e);return}}}catch(e){alert("Cannot access image");throw new Error("unable to access image data: "+e);}var pixels=imageData.data;var x,y,i,p,yp,yi,yw,r_sum,g_sum,b_sum,r_out_sum,g_out_sum,b_out_sum,r_in_sum,g_in_sum,b_in_sum,pr,pg,pb,rbs;var div=radius+radius+1;var w4=width<<2;var widthMinus1=width-1;var heightMinus1=height-1;var radiusPlus1=radius+1;var sumFactor=radiusPlus1*(radiusPlus1+1)/2;var stackStart=new BlurStack();var stack=stackStart;for(i=1;i<div;i++){stack=stack.next=new BlurStack();if(i==radiusPlus1)var stackEnd=stack}stack.next=stackStart;var stackIn=null;var stackOut=null;yw=yi=0;var mul_sum=mul_table[radius];var shg_sum=shg_table[radius];for(y=0;y<height;y++){r_in_sum=g_in_sum=b_in_sum=r_sum=g_sum=b_sum=0;r_out_sum=radiusPlus1*(pr=pixels[yi]);g_out_sum=radiusPlus1*(pg=pixels[yi+1]);b_out_sum=radiusPlus1*(pb=pixels[yi+2]);r_sum+=sumFactor*pr;g_sum+=sumFactor*pg;b_sum+=sumFactor*pb;stack=stackStart;for(i=0;i<radiusPlus1;i++){stack.r=pr;stack.g=pg;stack.b=pb;stack=stack.next}for(i=1;i<radiusPlus1;i++){p=yi+((widthMinus1<i?widthMinus1:i)<<2);r_sum+=(stack.r=(pr=pixels[p]))*(rbs=radiusPlus1-i);g_sum+=(stack.g=(pg=pixels[p+1]))*rbs;b_sum+=(stack.b=(pb=pixels[p+2]))*rbs;r_in_sum+=pr;g_in_sum+=pg;b_in_sum+=pb;stack=stack.next}stackIn=stackStart;stackOut=stackEnd;for(x=0;x<width;x++){pixels[yi]=(r_sum*mul_sum)>>shg_sum;pixels[yi+1]=(g_sum*mul_sum)>>shg_sum;pixels[yi+2]=(b_sum*mul_sum)>>shg_sum;r_sum-=r_out_sum;g_sum-=g_out_sum;b_sum-=b_out_sum;r_out_sum-=stackIn.r;g_out_sum-=stackIn.g;b_out_sum-=stackIn.b;p=(yw+((p=x+radius+1)<widthMinus1?p:widthMinus1))<<2;r_in_sum+=(stackIn.r=pixels[p]);g_in_sum+=(stackIn.g=pixels[p+1]);b_in_sum+=(stackIn.b=pixels[p+2]);r_sum+=r_in_sum;g_sum+=g_in_sum;b_sum+=b_in_sum;stackIn=stackIn.next;r_out_sum+=(pr=stackOut.r);g_out_sum+=(pg=stackOut.g);b_out_sum+=(pb=stackOut.b);r_in_sum-=pr;g_in_sum-=pg;b_in_sum-=pb;stackOut=stackOut.next;yi+=4}yw+=width}for(x=0;x<width;x++){g_in_sum=b_in_sum=r_in_sum=g_sum=b_sum=r_sum=0;yi=x<<2;r_out_sum=radiusPlus1*(pr=pixels[yi]);g_out_sum=radiusPlus1*(pg=pixels[yi+1]);b_out_sum=radiusPlus1*(pb=pixels[yi+2]);r_sum+=sumFactor*pr;g_sum+=sumFactor*pg;b_sum+=sumFactor*pb;stack=stackStart;for(i=0;i<radiusPlus1;i++){stack.r=pr;stack.g=pg;stack.b=pb;stack=stack.next}yp=width;for(i=1;i<=radius;i++){yi=(yp+x)<<2;r_sum+=(stack.r=(pr=pixels[yi]))*(rbs=radiusPlus1-i);g_sum+=(stack.g=(pg=pixels[yi+1]))*rbs;b_sum+=(stack.b=(pb=pixels[yi+2]))*rbs;r_in_sum+=pr;g_in_sum+=pg;b_in_sum+=pb;stack=stack.next;if(i<heightMinus1){yp+=width}}yi=x;stackIn=stackStart;stackOut=stackEnd;for(y=0;y<height;y++){p=yi<<2;pixels[p]=(r_sum*mul_sum)>>shg_sum;pixels[p+1]=(g_sum*mul_sum)>>shg_sum;pixels[p+2]=(b_sum*mul_sum)>>shg_sum;r_sum-=r_out_sum;g_sum-=g_out_sum;b_sum-=b_out_sum;r_out_sum-=stackIn.r;g_out_sum-=stackIn.g;b_out_sum-=stackIn.b;p=(x+(((p=y+radiusPlus1)<heightMinus1?p:heightMinus1)*width))<<2;r_sum+=(r_in_sum+=(stackIn.r=pixels[p]));g_sum+=(g_in_sum+=(stackIn.g=pixels[p+1]));b_sum+=(b_in_sum+=(stackIn.b=pixels[p+2]));stackIn=stackIn.next;r_out_sum+=(pr=stackOut.r);g_out_sum+=(pg=stackOut.g);b_out_sum+=(pb=stackOut.b);r_in_sum-=pr;g_in_sum-=pg;b_in_sum-=pb;stackOut=stackOut.next;yi+=width}}context.putImageData(imageData,top_x,top_y)}function BlurStack(){this.r=0;this.g=0;this.b=0;this.a=0;this.next=null}
       // https://gist.github.com/mjackson/5311256
     
@@ -489,398 +359,404 @@ var mul_table=[512,512,456,512,328,456,335,512,405,328,271,456,388,335,292,512,4
     
       // Return a base64 representation.
       canvas.toDataURL(); 
-      `;
-
-            // Convert the images and create the HTML.
-            let blurImgData = Data.fromPNG(img).toBase64String();
-            let html = `
+      `
+      
+      // Convert the images and create the HTML.
+      let blurImgData = Data.fromPNG(img).toBase64String()
+      let html = `
       <img id="blurImg" src="data:image/png;base64,${blurImgData}" />
       <canvas id="mainCanvas" />
-      `;
-
-            // Make the web view and get its return value.
-            let view = new WebView();
-            await view.loadHTML(html);
-            let returnValue = await view.evaluateJavaScript(js);
-
-            // Remove the data type from the string and convert to data.
-            let imageDataString = returnValue.slice(22);
-            let imageData = Data.fromBase64String(imageDataString);
-
-            // Convert to image and crop before returning.
-            let imageFromData = Image.fromData(imageData);
-            // return cropImage(imageFromData)
-            return imageFromData;
-        }
-
-        // Pixel sizes and positions for widgets on all supported phones.
-        function phoneSizes() {
-            let phones = {
-                // 12 and 12 Pro
-                2532: {
-                    small: 474,
-                    medium: 1014,
-                    large: 1062,
-                    left: 78,
-                    right: 618,
-                    top: 231,
-                    middle: 819,
-                    bottom: 1407
-                },
-
-                // 11 Pro Max, XS Max
-                2688: {
-                    small: 507,
-                    medium: 1080,
-                    large: 1137,
-                    left: 81,
-                    right: 654,
-                    top: 228,
-                    middle: 858,
-                    bottom: 1488
-                },
-
-                // 11, XR
-                1792: {
-                    small: 338,
-                    medium: 720,
-                    large: 758,
-                    left: 54,
-                    right: 436,
-                    top: 160,
-                    middle: 580,
-                    bottom: 1000
-                },
-
-                // 11 Pro, XS, X
-                2436: {
-                    small: 465,
-                    medium: 987,
-                    large: 1035,
-                    left: 69,
-                    right: 591,
-                    top: 213,
-                    middle: 783,
-                    bottom: 1353
-                },
-
-                // Plus phones
-                2208: {
-                    small: 471,
-                    medium: 1044,
-                    large: 1071,
-                    left: 99,
-                    right: 672,
-                    top: 114,
-                    middle: 696,
-                    bottom: 1278
-                },
-
-                // SE2 and 6/6S/7/8
-                1334: {
-                    small: 296,
-                    medium: 642,
-                    large: 648,
-                    left: 54,
-                    right: 400,
-                    top: 60,
-                    middle: 412,
-                    bottom: 764
-                },
-
-                // SE1
-                1136: {
-                    small: 282,
-                    medium: 584,
-                    large: 622,
-                    left: 30,
-                    right: 332,
-                    top: 59,
-                    middle: 399,
-                    bottom: 399
-                },
-
-                // 11 and XR in Display Zoom mode
-                1624: {
-                    small: 310,
-                    medium: 658,
-                    large: 690,
-                    left: 46,
-                    right: 394,
-                    top: 142,
-                    middle: 522,
-                    bottom: 902
-                },
-
-                // Plus in Display Zoom mode
-                2001: {
-                    small: 444,
-                    medium: 963,
-                    large: 972,
-                    left: 81,
-                    right: 600,
-                    top: 90,
-                    middle: 618,
-                    bottom: 1146
-                }
-            };
-            return phones;
-        }
-
-        var message;
-        message = title || '开始之前，请先前往桌面,截取空白界面的截图。然后回来继续';
-        let exitOptions = ['我已截图', '前去截图 >'];
-        let shouldExit = await generateAlert(message, exitOptions);
-        if (shouldExit) return;
-
-        // Get screenshot and determine phone size.
-        let img = await Photos.fromLibrary();
-        let height = img.size.height;
-        let phone = phoneSizes()[height];
-        if (!phone) {
-            message = '好像您选择的照片不是正确的截图，或者您的机型我们暂时不支持。点击确定前往社区讨论';
-            let _id = await generateAlert(message, ['帮助', '取消']);
-            if (_id === 0) Safari.openInApp('https://support.qq.com/products/287371', false);
-            return;
-        }
-
-        // Prompt for widget size and position.
-        message = '截图中要设置透明背景组件的尺寸类型是？';
-        let sizes = ['小尺寸', '中尺寸', '大尺寸'];
-        let size = await generateAlert(message, sizes);
-        let widgetSize = sizes[size];
-
-        message = '要设置透明背景的小组件在哪个位置？';
-        message +=
-            height == 1136
-                ? ' （备注：当前设备只支持两行小组件，所以下边选项中的「中间」和「底部」的选项是一致的）'
-                : '';
-
-        // Determine image crop based on phone size.
-        let crop = {w: '', h: '', x: '', y: ''};
-        if (widgetSize == '小尺寸') {
-            crop.w = phone.small;
-            crop.h = phone.small;
-            let positions = ['左上角', '右上角', '中间左', '中间右', '左下角', '右下角'];
-            let _posotions = ['Top left', 'Top right', 'Middle left', 'Middle right', 'Bottom left', 'Bottom right'];
-            let position = await generateAlert(message, positions);
-
-            // Convert the two words into two keys for the phone size dictionary.
-            let keys = _posotions[position].toLowerCase().split(' ');
-            crop.y = phone[keys[0]];
-            crop.x = phone[keys[1]];
-        } else if (widgetSize == '中尺寸') {
-            crop.w = phone.medium;
-            crop.h = phone.small;
-
-            // Medium and large widgets have a fixed x-value.
-            crop.x = phone.left;
-            let positions = ['顶部', '中间', '底部'];
-            let _positions = ['Top', 'Middle', 'Bottom'];
-            let position = await generateAlert(message, positions);
-            let key = _positions[position].toLowerCase();
-            crop.y = phone[key];
-        } else if (widgetSize == '大尺寸') {
-            crop.w = phone.medium;
-            crop.h = phone.large;
-            crop.x = phone.left;
-            let positions = ['顶部', '底部'];
-            let position = await generateAlert(message, positions);
-
-            // Large widgets at the bottom have the "middle" y-value.
-            crop.y = position ? phone.middle : phone.top;
-        }
-
-        // 透明/模糊选项
-        message = '需要给背景图片加什么显示效果？';
-        let blurOptions = ['透明', '白色 模糊', '黑色 模糊'];
-        let blurred = await generateAlert(message, blurOptions);
-
-        // Crop image and finalize the widget.
-        if (blurred) {
-            const style = blurred === 1 ? 'light' : 'dark';
-            img = await blurImage(img, style);
-        }
-        let imgCrop = cropImage(img, new Rect(crop.x, crop.y, crop.w, crop.h));
-
-        return imgCrop;
+      `
+      
+      // Make the web view and get its return value.
+      let view = new WebView()
+      await view.loadHTML(html)
+      let returnValue = await view.evaluateJavaScript(js)
+      
+      // Remove the data type from the string and convert to data.
+      let imageDataString = returnValue.slice(22)
+      let imageData = Data.fromBase64String(imageDataString)
+      
+      // Convert to image and crop before returning.
+      let imageFromData = Image.fromData(imageData)
+      // return cropImage(imageFromData)
+      return imageFromData
     }
 
-    /**
-     * 弹出一个通知
-     * @param {string} title 通知标题
-     * @param {string} body 通知内容
-     * @param {string} url 点击后打开的URL
-     */
-    async notify(title, body, url = null, opts = {}) {
-        let n = new Notification();
-        n = Object.assign(n, opts);
-        n.title = title;
-        n.body = body;
-        if (url) n.openURL = url;
-        return await n.schedule();
-    }
 
-    /**
-     * 给图片加一层半透明遮罩
-     * @param {Image} img 要处理的图片
-     * @param {string} color 遮罩背景颜色
-     * @param {float} opacity 透明度
-     */
-    async shadowImage(img, color = '#000000', opacity = 0.7) {
-        let ctx = new DrawContext();
-        // 获取图片的尺寸
-        ctx.size = img.size;
-
-        ctx.drawImageInRect(img, new Rect(0, 0, img.size['width'], img.size['height']));
-        ctx.setFillColor(new Color(color, opacity));
-        ctx.fillRect(new Rect(0, 0, img.size['width'], img.size['height']));
-
-        let res = await ctx.getImage();
-        return res;
-    }
-
-    /**
-     * 获取当前插件的设置
-     * @param {boolean} json 是否为json格式
-     */
-    getSettings(json = true) {
-        let res = json ? {} : '';
-        let cache = '';
-        // if (global && Keychain.contains(this.SETTING_KEY2)) {
-        //   cache = Keychain.get(this.SETTING_KEY2)
-        // } else if (Keychain.contains(this.SETTING_KEY)) {
-        //   cache = Keychain.get(this.SETTING_KEY)
-        // } else if (Keychain.contains(this.SETTING_KEY1)) {
-        //   cache = Keychain.get(this.SETTING_KEY1)
-        // } else if (Keychain.contains(this.SETTING_KEY2)){
-        if (Keychain.contains(this.SETTING_KEY)) {
-            cache = Keychain.get(this.SETTING_KEY);
+    // Pixel sizes and positions for widgets on all supported phones.
+    function phoneSizes() {
+      let phones = {
+        // 12 and 12 Pro
+        "2532": {
+          small:  474,
+          medium: 1014,
+          large:  1062,
+          left:  78,
+          right: 618,
+          top:    231,
+          middle: 819,
+          bottom: 1407
+        },
+      
+        // 11 Pro Max, XS Max
+        "2688": {
+          small:  507,
+          medium: 1080,
+          large:  1137,
+          left:  81,
+          right: 654,
+          top:    228,
+          middle: 858,
+          bottom: 1488
+        },
+      
+        // 11, XR
+        "1792": {
+          small:  338,
+          medium: 720,
+          large:  758,
+          left:  54,
+          right: 436,
+          top:    160,
+          middle: 580,
+          bottom: 1000
+        },
+        
+        
+        // 11 Pro, XS, X
+        "2436": {
+          small:  465,
+          medium: 987,
+          large:  1035,
+          left:  69,
+          right: 591,
+          top:    213,
+          middle: 783,
+          bottom: 1353
+        },
+      
+        // Plus phones
+        "2208": {
+          small:  471,
+          medium: 1044,
+          large:  1071,
+          left:  99,
+          right: 672,
+          top:    114,
+          middle: 696,
+          bottom: 1278
+        },
+        
+        // SE2 and 6/6S/7/8
+        "1334": {
+          small:  296,
+          medium: 642,
+          large:  648,
+          left:  54,
+          right: 400,
+          top:    60,
+          middle: 412,
+          bottom: 764
+        },
+        
+        
+        // SE1
+        "1136": {
+          small:  282,
+          medium: 584,
+          large:  622,
+          left: 30,
+          right: 332,
+          top:  59,
+          middle: 399,
+          bottom: 399
+        },
+        
+        // 11 and XR in Display Zoom mode
+        "1624": {
+          small: 310,
+          medium: 658,
+          large: 690,
+          left: 46,
+          right: 394,
+          top: 142,
+          middle: 522,
+          bottom: 902 
+        },
+        
+        // Plus in Display Zoom mode
+        "2001" : {
+          small: 444,
+          medium: 963,
+          large: 972,
+          left: 81,
+          right: 600,
+          top: 90,
+          middle: 618,
+          bottom: 1146
         }
-        if (json) {
-            try {
-                res = JSON.parse(cache);
-            } catch (e) {}
-        } else {
-            res = cache;
-        }
-
-        return res;
+      }
+      return phones
     }
 
-    /**
-     * 存储当前设置
-     * @param {bool} notify 是否通知提示
-     */
-    saveSettings(notify = true) {
-        let res = typeof this.settings === 'object' ? JSON.stringify(this.settings) : String(this.settings);
-        Keychain.set(this.SETTING_KEY, res);
-        if (notify) this.notify('设置成功', '桌面组件稍后将自动刷新');
+    var message
+    message = title || "开始之前，请先前往桌面,截取空白界面的截图。然后回来继续"
+    let exitOptions = ["我已截图","前去截图 >"]
+    let shouldExit = await generateAlert(message,exitOptions)
+    if (shouldExit) return
+
+    // Get screenshot and determine phone size.
+    let img = await Photos.fromLibrary()
+    let height = img.size.height
+    let phone = phoneSizes()[height]
+    if (!phone) {
+      message = "好像您选择的照片不是正确的截图，或者您的机型我们暂时不支持。点击确定前往社区讨论"
+      let _id = await generateAlert(message,["帮助", "取消"])
+      if (_id===0) Safari.openInApp('https://support.qq.com/products/287371', false)
+      return
     }
 
-    /**
-     * 获取当前插件是否有自定义背景图片
-     * @reutrn img | false
-     */
-    getBackgroundImage() {
-        // 如果有KEY则优先加载，key>key1>key2
-        // key2是全局
-        let result = null;
-        if (this.FILE_MGR_LOCAL.fileExists(this.BACKGROUND_KEY)) {
-            result = Image.fromFile(this.BACKGROUND_KEY);
-            // } else if (this.FILE_MGR_LOCAL.fileExists(this.BACKGROUND_KEY1)) {
-            //   result = Image.fromFile(this.BACKGROUND_KEY1)
-            // } else if (this.FILE_MGR_LOCAL.fileExists(this.BACKGROUND_KEY2)) {
-            //   result = Image.fromFile(this.BACKGROUND_KEY2)
-        }
-        return result;
+    // Prompt for widget size and position.
+    message = "截图中要设置透明背景组件的尺寸类型是？"
+    let sizes = ["小尺寸","中尺寸","大尺寸"]
+    let size = await generateAlert(message,sizes)
+    let widgetSize = sizes[size]
+
+    message = "要设置透明背景的小组件在哪个位置？"
+    message += (height == 1136 ? " （备注：当前设备只支持两行小组件，所以下边选项中的「中间」和「底部」的选项是一致的）" : "")
+
+    // Determine image crop based on phone size.
+    let crop = { w: "", h: "", x: "", y: "" }
+    if (widgetSize == "小尺寸") {
+      crop.w = phone.small
+      crop.h = phone.small
+      let positions = ["左上角","右上角","中间左","中间右","左下角","右下角"]
+      let _posotions = ["Top left","Top right","Middle left","Middle right","Bottom left","Bottom right"]
+      let position = await generateAlert(message,positions)
+      
+      // Convert the two words into two keys for the phone size dictionary.
+      let keys = _posotions[position].toLowerCase().split(' ')
+      crop.y = phone[keys[0]]
+      crop.x = phone[keys[1]]
+      
+    } else if (widgetSize == "中尺寸") {
+      crop.w = phone.medium
+      crop.h = phone.small
+      
+      // Medium and large widgets have a fixed x-value.
+      crop.x = phone.left
+      let positions = ["顶部","中间","底部"]
+      let _positions = ["Top","Middle","Bottom"]
+      let position = await generateAlert(message,positions)
+      let key = _positions[position].toLowerCase()
+      crop.y = phone[key]
+      
+    } else if(widgetSize == "大尺寸") {
+      crop.w = phone.medium
+      crop.h = phone.large
+      crop.x = phone.left
+      let positions = ["顶部","底部"]
+      let position = await generateAlert(message,positions)
+      
+      // Large widgets at the bottom have the "middle" y-value.
+      crop.y = position ? phone.middle : phone.top
     }
 
-    /**
-     * 设置当前组件的背景图片
-     * @param {image} img
-     */
-    setBackgroundImage(img, notify = true) {
-        if (!img) {
-            // 移除背景
-            if (this.FILE_MGR_LOCAL.fileExists(this.BACKGROUND_KEY)) {
-                this.FILE_MGR_LOCAL.remove(this.BACKGROUND_KEY);
-                // } else if (this.FILE_MGR_LOCAL.fileExists(this.BACKGROUND_KEY1)) {
-                //   this.FILE_MGR_LOCAL.remove(this.BACKGROUND_KEY1)
-                // } else if (this.FILE_MGR_LOCAL.fileExists(this.BACKGROUND_KEY2)) {
-                //   this.FILE_MGR_LOCAL.remove(this.BACKGROUND_KEY2)
-            }
-            if (notify) this.notify('移除成功', '小组件背景图片已移除，稍后刷新生效');
-        } else {
-            // 设置背景
-            // 全部设置一遍，
-            this.FILE_MGR_LOCAL.writeImage(this.BACKGROUND_KEY, img);
-            // this.FILE_MGR_LOCAL.writeImage(this.BACKGROUND_KEY1, img)
-            // this.FILE_MGR_LOCAL.writeImage(this.BACKGROUND_KEY2, img)
-            if (notify) this.notify('设置成功', '小组件背景图片已设置！稍后刷新生效');
-        }
+    // 透明/模糊选项
+    message = "需要给背景图片加什么显示效果？"
+    let blurOptions = ["透明", "白色 模糊", "黑色 模糊"]
+    let blurred = await generateAlert(message, blurOptions)
+
+    // Crop image and finalize the widget.
+    if (blurred) {
+      const style = (blurred === 1) ? 'light' : 'dark'
+      img = await blurImage(img, style)
     }
+    let imgCrop = cropImage(img, new Rect(crop.x,crop.y,crop.w,crop.h))
+
+
+    return imgCrop
+
+  }
+
+  /**
+   * 弹出一个通知
+   * @param {string} title 通知标题
+   * @param {string} body 通知内容
+   * @param {string} url 点击后打开的URL
+   */
+  async notify (title, body, url = null, opts = {}) {
+    let n = new Notification()
+    n = Object.assign(n, opts);
+    n.title = title
+    n.body = body
+    if (url) n.openURL = url
+    return await n.schedule()
+  }
+
+
+  /**
+   * 给图片加一层半透明遮罩
+   * @param {Image} img 要处理的图片
+   * @param {string} color 遮罩背景颜色
+   * @param {float} opacity 透明度
+   */
+  async shadowImage (img, color = '#000000', opacity = 0.7) {
+    let ctx = new DrawContext()
+    // 获取图片的尺寸
+    ctx.size = img.size
+    
+    ctx.drawImageInRect(img, new Rect(0, 0, img.size['width'], img.size['height']))
+    ctx.setFillColor(new Color(color, opacity))
+    ctx.fillRect(new Rect(0, 0, img.size['width'], img.size['height']))
+    
+    let res = await ctx.getImage()
+    return res
+  }
+  
+  /**
+   * 获取当前插件的设置
+   * @param {boolean} json 是否为json格式
+   */
+  getSettings(json=true){
+    let res=json?{}:""
+    let cache=""
+    // if (global && Keychain.contains(this.SETTING_KEY2)) {
+    //   cache = Keychain.get(this.SETTING_KEY2)
+    // } else if (Keychain.contains(this.SETTING_KEY)) {
+    //   cache = Keychain.get(this.SETTING_KEY)
+    // } else if (Keychain.contains(this.SETTING_KEY1)) {
+    //   cache = Keychain.get(this.SETTING_KEY1)
+    // } else if (Keychain.contains(this.SETTING_KEY2)){
+    if (Keychain.contains(this.SETTING_KEY)) {
+      cache= Keychain.get(this.SETTING_KEY)
+    }
+      if (json){
+        try {
+          res=JSON.parse(cache)
+        } catch (e) {}
+      }else{
+        res=cache
+      }
+    
+    return res
+  }
+
+  /**
+   * 存储当前设置
+   * @param {bool} notify 是否通知提示
+   */
+  saveSettings(notify=true){
+    let res= (typeof this.settings==="object")?JSON.stringify(this.settings):String(this.settings)
+    Keychain.set(this.SETTING_KEY, res)
+    if (notify) this.notify("设置成功","桌面组件稍后将自动刷新")
+  }
+
+  /**
+   * 获取当前插件是否有自定义背景图片
+   * @reutrn img | false
+   */
+  getBackgroundImage () {
+    // 如果有KEY则优先加载，key>key1>key2
+    // key2是全局
+    let result = null
+    if (this.FILE_MGR_LOCAL.fileExists(this.BACKGROUND_KEY)) {
+      result = Image.fromFile(this.BACKGROUND_KEY)
+    // } else if (this.FILE_MGR_LOCAL.fileExists(this.BACKGROUND_KEY1)) {
+    //   result = Image.fromFile(this.BACKGROUND_KEY1)
+    // } else if (this.FILE_MGR_LOCAL.fileExists(this.BACKGROUND_KEY2)) {
+    //   result = Image.fromFile(this.BACKGROUND_KEY2)
+    }
+    return result
+  }
+
+  /**
+   * 设置当前组件的背景图片
+   * @param {image} img 
+   */
+  setBackgroundImage (img, notify = true) {
+    if (!img) {
+      // 移除背景
+      if (this.FILE_MGR_LOCAL.fileExists(this.BACKGROUND_KEY)) {
+        this.FILE_MGR_LOCAL.remove(this.BACKGROUND_KEY)
+      // } else if (this.FILE_MGR_LOCAL.fileExists(this.BACKGROUND_KEY1)) {
+      //   this.FILE_MGR_LOCAL.remove(this.BACKGROUND_KEY1)
+      // } else if (this.FILE_MGR_LOCAL.fileExists(this.BACKGROUND_KEY2)) {
+      //   this.FILE_MGR_LOCAL.remove(this.BACKGROUND_KEY2)
+      }
+      if (notify) this.notify("移除成功", "小组件背景图片已移除，稍后刷新生效")
+    } else {
+      // 设置背景
+      // 全部设置一遍，
+      this.FILE_MGR_LOCAL.writeImage(this.BACKGROUND_KEY, img)
+      // this.FILE_MGR_LOCAL.writeImage(this.BACKGROUND_KEY1, img)
+      // this.FILE_MGR_LOCAL.writeImage(this.BACKGROUND_KEY2, img)
+      if (notify) this.notify("设置成功", "小组件背景图片已设置！稍后刷新生效")
+    }
+  }
+  
 }
 // @base.end
 // 运行环境
 // @running.start
-const Running = async (Widget, default_args = '') => {
-    let M = null;
-    // 判断hash是否和当前设备匹配
-    if (config.runsInWidget) {
-        M = new Widget(args.widgetParameter || '');
-        const W = await M.render();
-        Script.setWidget(W);
-        Script.complete();
-    } else {
-        let {act, data, __arg, __size} = args.queryParameters;
-        M = new Widget(__arg || default_args || '');
-        if (__size) M.init(__size);
-        if (!act || !M['_actions']) {
-            // 弹出选择菜单
-            const actions = M['_actions'];
-            const _actions = [];
-            const alert = new Alert();
-            alert.title = M.name;
-            alert.message = M.desc;
+const Running = async (Widget, default_args = "") => {
+  let M = null
+  // 判断hash是否和当前设备匹配
+  if (config.runsInWidget) {
+    M = new Widget(args.widgetParameter || '')
+    const W = await M.render()
+    Script.setWidget(W)
+    Script.complete()
+  } else {
+    let { act, data, __arg, __size } = args.queryParameters
+    M = new Widget(__arg || default_args || '')
+    if (__size) M.init(__size)
+    if (!act || !M['_actions']) {
+      // 弹出选择菜单
+      const actions = M['_actions']
+      const _actions = []
+      const alert = new Alert()
+      alert.title = M.name
+      alert.message = M.desc
 
-            for (let _ in actions) {
-                alert.addAction(_);
-                _actions.push(actions[_]);
-            }
-            alert.addCancelAction('取消操作');
-            const idx = await alert.presentSheet();
-            if (_actions[idx]) {
-                const func = _actions[idx];
-                await func();
-            }
-            return;
-        }
-        let _tmp = act
-            .split('-')
-            .map((_) => _[0].toUpperCase() + _.substr(1))
-            .join('');
-        let _act = `action${_tmp}`;
-        if (M[_act] && typeof M[_act] === 'function') {
-            const func = M[_act].bind(M);
-            await func(data);
-        }
+      for (let _ in actions) {
+        alert.addAction(_)
+        _actions.push(actions[_])
+      }
+      alert.addCancelAction("取消操作")
+      const idx = await alert.presentSheet()
+      if (_actions[idx]) {
+        const func = _actions[idx]
+        await func()
+      }
+      return
     }
-};
+    let _tmp = act.split('-').map(_ => _[0].toUpperCase() + _.substr(1)).join('')
+    let _act = `action${_tmp}`
+    if (M[_act] && typeof M[_act] === 'function') {
+      const func = M[_act].bind(M)
+      await func(data)
+    }
+  }
+}
+
 
 let WIDGET_FILE_NAME = 'bmw-linker.js';
 let WIDGET_VERSION = 'v2.2.1';
 let WIDGET_BUILD = '22050702';
 let WIDGET_PREFIX = '[bmw-linker] ';
 
-let DEPENDENCIES = [];
+let DEPENDENCIES = [
+];
 
 let WIDGET_FONT = 'SF UI Display';
 let WIDGET_FONT_BOLD = 'SF UI Display Bold';
 let BMW_SERVER_HOST = 'https://myprofile.bmw.com.cn';
+let BMW_LOGIN_HOST = 'https://login.bmw.com.cn/api/v3';
 let APP_HOST_SERVER = 'https://bmw-linker.com';
-let JS_CDN_SERVER = 'https://github.com/aileiys/bmw-scriptable-widgets@main/Publish/';
-let JS_LIB_CDN_SERVER = 'https://github.com/aileiys/bmw-scriptable-widgets/lib';
+let JS_CDN_SERVER = 'https://cdn.jsdelivr.net/gh/opp100/bmw-scriptable-widgets@main/Publish/';
+let JS_LIB_CDN_SERVER = 'https://cdn.jsdelivr.net/gh/opp100/bmw-scriptable-widgets/lib';
 
 let DEFAULT_BG_COLOR_LIGHT = '#FFFFFF';
 let DEFAULT_BG_COLOR_DARK = '#2B2B2B';
@@ -890,7 +766,7 @@ let DEFAULT_LOGO_DARK = 'https://z3.ax1x.com/2021/11/01/ICaqu6.png';
 // header is might be used for preventing the bmw block the external api?
 let BMW_HEADERS = {
     'Content-Type': 'application/json; charset=utf-8',
-    'x-user-agent': 'ios(16.2);bmw;2.12.0(19965)'
+    'x-user-agent': 'ios(15.4.1);bmw;3.1.0(20658)'
 };
 
 // setup local storage keys
@@ -1130,7 +1006,7 @@ class Widget extends Base {
         }
         let passCode = userLoginAlert.textFieldValue(0);
 
-        let req = new Request(BMW_SERVER_HOST + `/eadrax-coas/v1/login/sms`);
+        let req = new Request(BMW_LOGIN_HOST + `/register/sms`);
         req.method = 'POST';
 
         req.body = JSON.stringify({
@@ -2571,28 +2447,27 @@ class Widget extends Base {
 
     async sendLoginSMS() {
         console.log('Start to send sms');
-        let req = new Request(
-            BMW_SERVER_HOST + `/eadrax-coas/v1/cop/${this.userConfigData.username}/is-captcha-needed`
-        );
-        req.method = 'GET';
+        // let req = new Request(
+        //     BMW_SERVER_HOST + `/eadrax-coas/v1/cop/${this.userConfigData.username}/is-captcha-needed`
+        // );
+        // req.method = 'GET';
 
-        req.headers = BMW_HEADERS;
+        // req.headers = BMW_HEADERS;
 
-        console.log('trying to check captcha');
-        let res = await req.loadJSON();
-        console.warn(res);
+        // console.log('trying to check captcha');
+        // let res = await req.loadJSON();
+        // console.warn(res);
 
-        if (res.code !== 200) {
-            return this.loginFailedAlert();
-        }
+        // if (res.code !== 200) {
+        //     return this.loginFailedAlert();
+        // }
 
         // login as SMS
-        let smsReq = new Request(BMW_SERVER_HOST + `/eadrax-coas/v1/cop/message`);
+        let smsReq = new Request(BMW_LOGIN_HOST + `/register/sms/send`);
         smsReq.method = 'POST';
 
         smsReq.body = JSON.stringify({
-            mobile: Number(this.userConfigData.username).toString(),
-            deviceId: '12345ABCDE11'
+            mobile: Number(this.userConfigData.username).toString()
         });
         console.warn(smsReq.body);
         smsReq.headers = BMW_HEADERS;
@@ -2942,4 +2817,4 @@ class Widget extends Base {
     }
 }
 
-await Running(Widget);
+await Running(Widget)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
